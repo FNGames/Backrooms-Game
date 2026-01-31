@@ -26,4 +26,4 @@ func _ready():
 @rpc("call_local")
 func collect():
 	# Play a sound or particle effect here if you want!
-	queue_free() # Delete object from the game poop
+	queue_free() # Delete object from the game 
