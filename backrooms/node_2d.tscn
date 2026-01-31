@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://dsuinysr6i51w"]
+
+[ext_resource type="Script" uid="uid://ul6e88m51fjc" path="res://network_manager.gd" id="1_wtcfe"]
+[ext_resource type="PackedScene" uid="uid://ohm0cadryckk" path="res://player.tscn" id="2_0e48y"]
+[ext_resource type="PackedScene" uid="uid://cfb42ydoohekm" path="res://scrap.tscn" id="3_epypp"]
+[ext_resource type="PackedScene" uid="uid://bo33kfnad8r3a" path="res://wall.tscn" id="4_0hol4"]
+
+[node name="Main" type="Node2D" unique_id=1699848197]
+script = ExtResource("1_wtcfe")
+player_scene = ExtResource("2_0e48y")
+scrap_scene = ExtResource("3_epypp")
+wall_scene = ExtResource("4_0hol4")
+
+[node name="Players" type="Node2D" parent="." unique_id=812665411]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1226289113]
+
+[node name="LobbyUI" type="Control" parent="CanvasLayer" unique_id=2064853302]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/LobbyUI" unique_id=483216033]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+alignment = 1
+
+[node name="AddressEntry" type="LineEdit" parent="CanvasLayer/LobbyUI/VBoxContainer" unique_id=2014883807]
+layout_mode = 2
+
+[node name="HostButton" type="Button" parent="CanvasLayer/LobbyUI/VBoxContainer" unique_id=878947807]
+layout_mode = 2
+text = "Host"
+
+[node name="JoinButton" type="Button" parent="CanvasLayer/LobbyUI/VBoxContainer" unique_id=25081896]
+layout_mode = 2
+text = "Join
+"
+
+[node name="StatusLabel" type="Label" parent="CanvasLayer/LobbyUI/VBoxContainer" unique_id=749285876]
+layout_mode = 2
+text = "Ready"
+
+[node name="CodeEntry" type="LineEdit" parent="CanvasLayer/LobbyUI/VBoxContainer" unique_id=32353559]
+layout_mode = 2
+
+[connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/HostButton" to="." method="_on_host_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/JoinButton" to="." method="_on_join_button_pressed"]
