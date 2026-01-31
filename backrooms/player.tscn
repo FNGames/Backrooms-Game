@@ -175,4 +175,4 @@ texture_repeat = 1
 scale = Vector2(3.975, 3.975)
 sprite_frames = SubResource("SpriteFrames_4flbx")
 animation = &"idle"
-frame_progress = 0.7891792
+frame_progress = 0.8509199
