@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://brg2i483bkg6s"]
+
+[ext_resource type="Script" uid="uid://qou0j6re6ets" path="res://fabric.gd" id="1_2jywc"]
+[ext_resource type="Texture2D" uid="uid://bir3yp24ptx6" path="res://white placeholder.png" id="1_pu0ih"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2jywc"]
+
+[node name="Area2D" type="Area2D" unique_id=840010303]
+script = ExtResource("1_2jywc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1678581349]
+shape = SubResource("RectangleShape2D_2jywc")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1640031845]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(3.5762787e-07, 2.2649765e-06)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("1_pu0ih")

@@ -7,6 +7,7 @@ const BROADCAST_PORT = 8911
 @export var player_scene: PackedScene
 @export var scrap_scene: PackedScene 
 @export var wall_scene: PackedScene 
+@export var fabric_scene: PackedScene # <--- NEW EXPORT
 
 # UI Nodes
 @onready var lobby_ui = $CanvasLayer/LobbyUI
@@ -46,12 +47,16 @@ func _ready():
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
 	
+	# SETUP SPAWNER
 	var spawner = MultiplayerSpawner.new()
 	add_child(spawner)
 	spawner.spawn_path = players_container.get_path()
+	
+	# REGISTER ALL SPAWNABLES
 	if player_scene: spawner.add_spawnable_scene(player_scene.resource_path)
 	if scrap_scene: spawner.add_spawnable_scene(scrap_scene.resource_path)
 	if wall_scene: spawner.add_spawnable_scene(wall_scene.resource_path)
+	if fabric_scene: spawner.add_spawnable_scene(fabric_scene.resource_path) # <--- ADD THIS
 
 	broadcaster.set_broadcast_enabled(true)
 	broadcaster.set_dest_address("255.255.255.255", BROADCAST_PORT)
@@ -144,7 +149,7 @@ func _on_host_button_pressed():
 	
 	lobby_ui.hide()
 	spawn_player(1)
-	_spawn_level_scrap()
+	_spawn_level_resources() # <--- CHANGED FUNCTION NAME
 	
 	broadcast_timer.start()
 	
@@ -253,10 +258,21 @@ func spawn_player(id):
 	players_container.add_child(player, true) 
 	player.global_position = Vector2(randf_range(100, 900), randf_range(100, 500))
 
-func _spawn_level_scrap():
-	if not scrap_scene: return
-	for i in range(5):
-		var pile = scrap_scene.instantiate()
-		pile.name = "Scrap_" + str(randi())
-		pile.global_position = Vector2(randf_range(100, 900), randf_range(100, 500))
-		players_container.add_child(pile, true)
+# RENAMED FROM _spawn_level_scrap
+func _spawn_level_resources():
+	# 1. Spawn Scrap
+	if scrap_scene:
+		for i in range(5):
+			var pile = scrap_scene.instantiate()
+			pile.name = "Scrap_" + str(randi())
+			pile.global_position = Vector2(randf_range(100, 900), randf_range(100, 500))
+			players_container.add_child(pile, true)
+	
+	# 2. Spawn Fabric (NEW)
+	if fabric_scene:
+		for i in range(5): # Spawning 5 fabric piles
+			var pile = fabric_scene.instantiate()
+			pile.name = "Fabric_" + str(randi())
+			# Same random area as scrap, or adjust these numbers to spawn elsewhere
+			pile.global_position = Vector2(randf_range(100, 900), randf_range(100, 500))
+			players_container.add_child(pile, true)

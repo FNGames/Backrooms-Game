@@ -4,6 +4,25 @@ extends CharacterBody2D
 @export var speed: float = 300.0
 @export var lerp_speed: float = 20.0
 
+# --- CRAFTING SYSTEM (NEW) ---
+# This creates a list in the Inspector!
+@export var recipes: Array[Dictionary] = [
+	{
+		"name": "Refined Metal",
+		"scrap_cost": 10,
+		"fabric_cost": 0,
+		"output_name": "metal",
+		"output_amount": 10
+	},
+	{
+		"name": "Bandage",
+		"scrap_cost": 0,
+		"fabric_cost": 5,
+		"output_name": "bandage",
+		"output_amount": 1
+	}
+]
+
 # --- STATE ---
 var target_position: Vector2 = Vector2.ZERO
 var can_send_updates = false
@@ -14,8 +33,11 @@ var is_flipped: bool = false
 var network_tick_rate: float = 0.05 
 var current_tick: float = 0.0
 
-# --- SCRAP MECHANIC ---
+# --- RESOURCES (UPDATED) ---
 var scrap_amount: int = 0
+var fabric_amount: int = 0 # NEW RESOURCE
+var crafted_inventory: Dictionary = {} # Stores all outputs: {"metal": 0, "bandage": 0}
+
 var interact_timer: float = 0.0
 var hold_duration: float = 3.0 
 var current_pile = null 
@@ -23,6 +45,7 @@ var current_pile = null
 # UI Components
 var progress_bar: ProgressBar
 var score_label: Label
+var fabric_label: Label # NEW LABEL
 var interaction_area: Area2D
 
 @onready var inventory: Sprite2D = $Inv/InvControl/Sprite2D
@@ -43,39 +66,29 @@ func _ready():
 	
 	var camera = get_node_or_null("Camera2D")
 
-	# --- CLIENT SIDED VISIBILITY LOGIC (Rule 1) ---
+	# --- CLIENT SIDED VISIBILITY LOGIC ---
 	if is_multiplayer_authority():
-		# IF I AM THE OWNER:
 		if not camera:
 			camera = Camera2D.new()
 			add_child(camera)
 		camera.make_current()
 		modulate = Color(0.5, 1, 0.5) 
 		
-		# Show the UI container (Inv), but hide the bag sprite (inventory) to start
 		if has_node("Inv"): $Inv.visible = true
 		inventory.visible = false 
 		
-		# FIX: Ensure visual state is correct at start (hides all placeholders if 0 scrap)
 		update_inventory_visuals() 
 		
 		await get_tree().create_timer(0.5).timeout
 		can_send_updates = true
 	else:
-		# IF I AM NOT THE OWNER (I am looking at a friend):
 		if camera: camera.enabled = false
 		modulate = Color(1, 0.5, 0.5) 
 		progress_bar.visible = false 
-		
-		# HIDE THEIR INVENTORY FROM MY SCREEN
-		# This ensures Player 1 doesn't see Player 2's menu floating in the air
 		if has_node("Inv"): $Inv.visible = false
 
 func _physics_process(delta):
-	# REMOVED INVENTORY LOGIC FROM HERE (Rule 2)
-	
 	if is_multiplayer_authority():
-		# MOVED INPUT HERE (Rule 3): Only the owner can open their own bag
 		if Input.is_action_just_pressed("ui_accept"):
 			inventory.visible = not inventory.visible
 			
@@ -90,19 +103,22 @@ func _physics_process(delta):
 	else:
 		global_position = global_position.lerp(target_position, lerp_speed * delta)
 
-# NEW FUNCTION: Handles the visuals only when they need to change
 func update_inventory_visuals():
 	# Reset all to hidden first
-	red_placholder.hide()
-	red_placholder_2.hide()
-	red_placholder_3.hide()
-	red_placholder_4.hide()
+	if red_placholder: red_placholder.hide()
+	if red_placholder_2: red_placholder_2.hide()
+	if red_placholder_3: red_placholder_3.hide()
+	if red_placholder_4: red_placholder_4.hide()
 	
-	# Show based on amount
-	if scrap_amount >= 10: red_placholder.show()
-	if scrap_amount >= 20: red_placholder_2.show()
-	if scrap_amount >= 30: red_placholder_3.show()
-	if scrap_amount >= 40: red_placholder_4.show()
+	# Show based on amount (Scrap)
+	if scrap_amount >= 10 and red_placholder: red_placholder.show()
+	if scrap_amount >= 20 and red_placholder_2: red_placholder_2.show()
+	if scrap_amount >= 30 and red_placholder_3: red_placholder_3.show()
+	if scrap_amount >= 40 and red_placholder_4: red_placholder_4.show()
+	
+	# Update Text Labels
+	score_label.text = "Scrap: " + str(scrap_amount)
+	fabric_label.text = "Fabric: " + str(fabric_amount)
 
 func _send_network_updates():
 	var new_anim = "idle"
@@ -134,6 +150,62 @@ func _input(event):
 		else:
 			print("Not enough scrap to build wall!")
 
+# --- DYNAMIC CRAFTING LOGIC (UPDATED) ---
+func _on_button_pressed() -> void:
+	if not is_multiplayer_authority(): return
+	
+	# DEFAULT: Try to craft the FIRST recipe in the list (Index 0)
+	# (You can change this to 1, 2, etc. if you make more buttons)
+	var recipe_index = 0 
+	
+	if recipes.size() > recipe_index:
+		var recipe = recipes[recipe_index]
+		
+		# Check if we have enough materials for this specific recipe
+		if scrap_amount >= recipe["scrap_cost"] and fabric_amount >= recipe["fabric_cost"]:
+			rpc_id(1, "request_craft_recipe", recipe_index)
+		else:
+			print("Not enough resources for: " + recipe["name"])
+	else:
+		print("No recipe found at index " + str(recipe_index))
+
+@rpc("any_peer", "call_local", "reliable")
+func request_craft_recipe(index: int):
+	if multiplayer.is_server():
+		# Security Check: Does recipe exist?
+		if index < 0 or index >= recipes.size(): return
+		
+		var recipe = recipes[index]
+		
+		# Security Check: Can they afford it?
+		if scrap_amount >= recipe["scrap_cost"] and fabric_amount >= recipe["fabric_cost"]:
+			# Deduct Cost
+			scrap_amount -= recipe["scrap_cost"]
+			fabric_amount -= recipe["fabric_cost"]
+			
+			# Add Output
+			var out_name = recipe["output_name"]
+			var out_amt = recipe["output_amount"]
+			
+			if not crafted_inventory.has(out_name):
+				crafted_inventory[out_name] = 0
+			crafted_inventory[out_name] += out_amt
+			
+			# Sync back to client
+			rpc("update_crafting_stats", scrap_amount, fabric_amount, crafted_inventory)
+
+@rpc("call_local", "reliable")
+func update_crafting_stats(new_scrap, new_fabric, new_inventory):
+	scrap_amount = new_scrap
+	fabric_amount = new_fabric
+	crafted_inventory = new_inventory
+	
+	update_inventory_visuals()
+	
+	print("Crafting Complete! Inventory: ", crafted_inventory)
+
+# --- STANDARD SETUP & NETWORKING ---
+
 func _setup_interaction_components():
 	interaction_area = Area2D.new()
 	var col = CollisionShape2D.new()
@@ -158,6 +230,13 @@ func _setup_interaction_components():
 	score_label.text = "Scrap: 0"
 	score_label.position = Vector2(-20, 40)
 	add_child(score_label)
+	
+	# NEW FABRIC LABEL
+	fabric_label = Label.new()
+	fabric_label.text = "Fabric: 0"
+	fabric_label.position = Vector2(-20, 60) # Below scrap
+	fabric_label.modulate = Color(0.8, 0.8, 1.0) # Light blueish
+	add_child(fabric_label)
 
 func handle_interaction(delta):
 	if current_pile != null and Input.is_action_pressed("ui_accept"):
@@ -169,62 +248,70 @@ func handle_interaction(delta):
 			interact_timer = 0.0
 			progress_bar.value = 0.0
 			progress_bar.visible = false
-			rpc_id(1, "request_collect_scrap", current_pile.get_path())
+			
+			# Send pile path AND the group it belongs to so server knows what to add
+			var type = "scrap"
+			if current_pile.is_in_group("fabric"): type = "fabric"
+			
+			rpc_id(1, "request_collect_resource", current_pile.get_path(), type)
 	else:
 		interact_timer = 0.0
 		progress_bar.value = 0.0
 		progress_bar.visible = false
 
 func _on_area_entered(area):
-	if area.is_in_group("scrap"): 
+	# Check for both groups
+	if area.is_in_group("scrap") or area.is_in_group("fabric"): 
 		current_pile = area
-
+		
 func _on_area_exited(area):
 	if area == current_pile: current_pile = null
 
-# --- NETWORKING ---
-
 @rpc("any_peer", "call_local", "reliable")
-func request_collect_scrap(pile_path):
+func request_collect_resource(pile_path, type):
 	if multiplayer.is_server():
 		var pile = get_node_or_null(pile_path)
 		if pile != null:
 			var sender_id = multiplayer.get_remote_sender_id()
 			if sender_id == 0: sender_id = 1
-			
 			var player_node = get_parent().get_node_or_null(str(sender_id))
+			
 			if player_node:
-				player_node.rpc("add_scrap", 10)
+				if type == "fabric":
+					player_node.rpc("add_fabric", 5) # Fabric gives 5
+				else:
+					player_node.rpc("add_scrap", 10) # Scrap gives 10
+			
 			pile.collect()
-		else:
-			print("Server Error: Scrap pile not found at path ", pile_path)
 
 @rpc("any_peer", "call_local")
 func request_place_wall(pos):
 	if multiplayer.is_server():
 		if scrap_amount >= 1:
 			rpc("add_scrap", -1)
-			
 			if ResourceLoader.exists("res://wall.tscn"):
 				var wall_scn = load("res://wall.tscn") 
 				var wall = wall_scn.instantiate()
 				wall.global_position = pos
 				wall.name = "Wall_" + str(randi())
 				get_parent().add_child(wall, true) 
-			else:
-				print("CRITICAL ERROR: 'res://wall.tscn' not found!")
 
 @rpc("any_peer", "call_local", "reliable")
 func add_scrap(amount):
 	scrap_amount += amount
-	score_label.text = "Scrap: " + str(scrap_amount)
-	
-	# CALL VISUAL UPDATE HERE (Event-Driven)
 	update_inventory_visuals()
-	
 	score_label.modulate = Color(1, 1, 0)
 	await get_tree().create_timer(0.2).timeout
 	score_label.modulate = Color(1, 1, 1)
+
+# NEW RPC FOR FABRIC
+@rpc("any_peer", "call_local", "reliable")
+func add_fabric(amount):
+	fabric_amount += amount
+	update_inventory_visuals()
+	fabric_label.modulate = Color(0, 1, 1) # Cyan flash
+	await get_tree().create_timer(0.2).timeout
+	fabric_label.modulate = Color(0.8, 0.8, 1.0)
 
 @rpc("any_peer", "call_local", "unreliable_ordered")
 func update_position_server(new_pos: Vector2):

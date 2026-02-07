@@ -162,6 +162,19 @@ animations = [{
 
 [node name="Player" type="CharacterBody2D" unique_id=1593526875]
 script = ExtResource("1_onrkg")
+recipes = Array[Dictionary]([{
+"fabric_cost": 0,
+"name": "Refined Metal",
+"output_amount": 10,
+"output_name": "metal",
+"scrap_cost": 10
+}, {
+"fabric_cost": 10,
+"name": "Bandage",
+"output_amount": 1,
+"output_name": "bandage",
+"scrap_cost": 0
+}])
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=789898183]
 scale = Vector2(6.46, 6.46)
@@ -204,6 +217,14 @@ position = Vector2(-36.619717, -16.096579)
 scale = Vector2(0.27087516, 0.27087516)
 texture = ExtResource("4_hqtel")
 
+[node name="Button" type="Button" parent="Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder" unique_id=280647415]
+z_index = 1
+offset_left = -20.055733
+offset_top = -18.198713
+offset_right = 14.519882
+offset_bottom = -10.198713
+scale = Vector2(4.75859, 4.75859)
+
 [node name="RedPlacholder2" type="Sprite2D" parent="Inv/InvControl/Sprite2D/ScarpAmmount" unique_id=35990449]
 texture_filter = 1
 texture_repeat = 1
@@ -224,3 +245,5 @@ texture_repeat = 1
 position = Vector2(-3.4205246, -16.297787)
 scale = Vector2(0.27087516, 0.27087516)
 texture = ExtResource("4_hqtel")
+
+[connection signal="pressed" from="Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder/Button" to="." method="_on_button_pressed"]

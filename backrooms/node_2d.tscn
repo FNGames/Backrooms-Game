@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://ohm0cadryckk" path="res://player.tscn" id="2_0e48y"]
 [ext_resource type="PackedScene" uid="uid://cfb42ydoohekm" path="res://scrap.tscn" id="3_epypp"]
 [ext_resource type="PackedScene" uid="uid://bo33kfnad8r3a" path="res://wall.tscn" id="4_0hol4"]
+[ext_resource type="PackedScene" uid="uid://brg2i483bkg6s" path="res://fabric.tscn" id="5_d21ai"]
 [ext_resource type="Texture2D" uid="uid://dj7c2vkpv8omu" path="res://00_backrooms-1024x576.jpg" id="5_kdubu"]
 [ext_resource type="Texture2D" uid="uid://cye84tw2cpdmn" path="res://Play.png" id="6_d21ai"]
 
@@ -12,6 +13,7 @@ script = ExtResource("1_wtcfe")
 player_scene = ExtResource("2_0e48y")
 scrap_scene = ExtResource("3_epypp")
 wall_scene = ExtResource("4_0hol4")
+fabric_scene = ExtResource("5_d21ai")
 
 [node name="Players" type="Node2D" parent="." unique_id=812665411]
 
