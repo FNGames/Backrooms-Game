@@ -4,6 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://ohm0cadryckk" path="res://player.tscn" id="2_0e48y"]
 [ext_resource type="PackedScene" uid="uid://cfb42ydoohekm" path="res://scrap.tscn" id="3_epypp"]
 [ext_resource type="PackedScene" uid="uid://bo33kfnad8r3a" path="res://wall.tscn" id="4_0hol4"]
+[ext_resource type="Texture2D" uid="uid://dj7c2vkpv8omu" path="res://00_backrooms-1024x576.jpg" id="5_kdubu"]
+[ext_resource type="Texture2D" uid="uid://cye84tw2cpdmn" path="res://Play.png" id="6_d21ai"]
 
 [node name="Main" type="Node2D" unique_id=1699848197]
 script = ExtResource("1_wtcfe")
@@ -47,6 +49,44 @@ text = "Ready"
 
 [node name="CodeEntry" type="LineEdit" parent="CanvasLayer/LobbyUI/VBoxContainer" unique_id=32353559]
 layout_mode = 2
+
+[node name="Main Menu" type="CanvasLayer" parent="." unique_id=473372722]
+visible = false
+
+[node name="Sprite2D" type="Sprite2D" parent="Main Menu" unique_id=187019293]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(603, 322)
+scale = Vector2(1.275, 1.275)
+texture = ExtResource("5_kdubu")
+
+[node name="Control" type="Control" parent="Main Menu" unique_id=825630182]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Panel" type="Panel" parent="Main Menu/Control" unique_id=2019690927]
+layout_mode = 0
+offset_left = -14.0
+offset_top = -9.999999
+offset_right = 26.0
+offset_bottom = 30.0
+scale = Vector2(29.04, 16.36)
+
+[node name="Button" type="Button" parent="Main Menu/Control" unique_id=1396838428]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.855
+offset_top = 265.13
+offset_right = 116.854996
+offset_bottom = 293.13004
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1.445, 1.24)
+icon = ExtResource("6_d21ai")
 
 [connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/HostButton" to="." method="_on_host_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/JoinButton" to="." method="_on_join_button_pressed"]

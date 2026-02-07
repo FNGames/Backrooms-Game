@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://dqgtehpdgp4ff" path="res://player.gd" id="1_onrkg"]
 [ext_resource type="Texture2D" uid="uid://chjat7jo8iycx" path="res://male_hero_template.png" id="2_onrkg"]
+[ext_resource type="Texture2D" uid="uid://ddbl0t451ek0b" path="res://inv_placeholder.png" id="3_i3pqv"]
+[ext_resource type="Texture2D" uid="uid://byksk1yef41sn" path="res://Red Placholder.png" id="4_hqtel"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hqtel"]
 
@@ -176,3 +178,49 @@ scale = Vector2(3.975, 3.975)
 sprite_frames = SubResource("SpriteFrames_4flbx")
 animation = &"idle"
 frame_progress = 0.8509199
+
+[node name="Inv" type="CanvasLayer" parent="." unique_id=2111573900]
+
+[node name="InvControl" type="Control" parent="Inv" unique_id=804327599]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Sprite2D" type="Sprite2D" parent="Inv/InvControl" unique_id=446887558]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(575, 330)
+scale = Vector2(9.94, 9.94)
+texture = ExtResource("3_i3pqv")
+
+[node name="ScarpAmmount" type="Node2D" parent="Inv/InvControl/Sprite2D" unique_id=302221989]
+position = Vector2(0, -0.50301814)
+
+[node name="RedPlacholder" type="Sprite2D" parent="Inv/InvControl/Sprite2D/ScarpAmmount" unique_id=1926973772]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(-36.619717, -16.096579)
+scale = Vector2(0.27087516, 0.27087516)
+texture = ExtResource("4_hqtel")
+
+[node name="RedPlacholder2" type="Sprite2D" parent="Inv/InvControl/Sprite2D/ScarpAmmount" unique_id=35990449]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(-25.251507, -16.297787)
+scale = Vector2(0.27087516, 0.27087516)
+texture = ExtResource("4_hqtel")
+
+[node name="RedPlacholder3" type="Sprite2D" parent="Inv/InvControl/Sprite2D/ScarpAmmount" unique_id=1937261046]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(-14.788727, -16.096579)
+scale = Vector2(0.27087516, 0.27087516)
+texture = ExtResource("4_hqtel")
+
+[node name="RedPlacholder4" type="Sprite2D" parent="Inv/InvControl/Sprite2D/ScarpAmmount" unique_id=311230880]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(-3.4205246, -16.297787)
+scale = Vector2(0.27087516, 0.27087516)
+texture = ExtResource("4_hqtel")

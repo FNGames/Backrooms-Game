@@ -10,6 +10,10 @@ var can_send_updates = false
 var current_anim: String = "idle" 
 var is_flipped: bool = false 
 
+# --- NETWORK THROTTLE ---
+var network_tick_rate: float = 0.05 
+var current_tick: float = 0.0
+
 # --- SCRAP MECHANIC ---
 var scrap_amount: int = 0
 var interact_timer: float = 0.0
@@ -21,6 +25,14 @@ var progress_bar: ProgressBar
 var score_label: Label
 var interaction_area: Area2D
 
+@onready var inventory: Sprite2D = $Inv/InvControl/Sprite2D
+
+# Scrap Placeholders
+@onready var red_placholder: Sprite2D = $Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder
+@onready var red_placholder_2: Sprite2D = $Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder2
+@onready var red_placholder_3: Sprite2D = $Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder3
+@onready var red_placholder_4: Sprite2D = $Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder4
+
 func _ready():
 	motion_mode = MOTION_MODE_FLOATING
 	var id = name.to_int()
@@ -30,57 +42,98 @@ func _ready():
 	_setup_interaction_components()
 	
 	var camera = get_node_or_null("Camera2D")
+
+	# --- CLIENT SIDED VISIBILITY LOGIC (Rule 1) ---
 	if is_multiplayer_authority():
+		# IF I AM THE OWNER:
 		if not camera:
 			camera = Camera2D.new()
 			add_child(camera)
 		camera.make_current()
 		modulate = Color(0.5, 1, 0.5) 
+		
+		# Show the UI container (Inv), but hide the bag sprite (inventory) to start
+		if has_node("Inv"): $Inv.visible = true
+		inventory.visible = false 
+		
+		# FIX: Ensure visual state is correct at start (hides all placeholders if 0 scrap)
+		update_inventory_visuals() 
+		
 		await get_tree().create_timer(0.5).timeout
 		can_send_updates = true
 	else:
+		# IF I AM NOT THE OWNER (I am looking at a friend):
 		if camera: camera.enabled = false
 		modulate = Color(1, 0.5, 0.5) 
 		progress_bar.visible = false 
+		
+		# HIDE THEIR INVENTORY FROM MY SCREEN
+		# This ensures Player 1 doesn't see Player 2's menu floating in the air
+		if has_node("Inv"): $Inv.visible = false
 
 func _physics_process(delta):
+	# REMOVED INVENTORY LOGIC FROM HERE (Rule 2)
+	
 	if is_multiplayer_authority():
+		# MOVED INPUT HERE (Rule 3): Only the owner can open their own bag
+		if Input.is_action_just_pressed("ui_accept"):
+			inventory.visible = not inventory.visible
+			
 		handle_input()
 		handle_interaction(delta) 
 		move_and_slide()
 		
-		# Syncs
-		var new_anim = "idle"
-		if velocity.length() > 0: new_anim = "walk"
-		if new_anim != current_anim:
-			current_anim = new_anim
-			rpc("play_animation", current_anim)
-			
-		if velocity.x != 0:
-			var should_flip = velocity.x < 0
-			if should_flip != is_flipped:
-				is_flipped = should_flip
-				rpc("update_flip", is_flipped)
-		
-		if can_send_updates:
-			rpc_id(1, "update_position_server", global_position)
+		current_tick += delta
+		if current_tick >= network_tick_rate:
+			current_tick = 0.0 
+			_send_network_updates()
 	else:
 		global_position = global_position.lerp(target_position, lerp_speed * delta)
 
+# NEW FUNCTION: Handles the visuals only when they need to change
+func update_inventory_visuals():
+	# Reset all to hidden first
+	red_placholder.hide()
+	red_placholder_2.hide()
+	red_placholder_3.hide()
+	red_placholder_4.hide()
+	
+	# Show based on amount
+	if scrap_amount >= 10: red_placholder.show()
+	if scrap_amount >= 20: red_placholder_2.show()
+	if scrap_amount >= 30: red_placholder_3.show()
+	if scrap_amount >= 40: red_placholder_4.show()
+
+func _send_network_updates():
+	var new_anim = "idle"
+	if velocity.length() > 0: new_anim = "walk"
+	if new_anim != current_anim:
+		current_anim = new_anim
+		rpc("play_animation", current_anim)
+		
+	if velocity.x != 0:
+		var should_flip = velocity.x < 0
+		if should_flip != is_flipped:
+			is_flipped = should_flip
+			rpc("update_flip", is_flipped)
+	
+	if can_send_updates:
+		rpc_id(1, "update_position_server", global_position)
+
 func handle_input():
-	var input_direction = Input.get_vector("left", "right", "up", "down")
+	var input_direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	velocity = input_direction * speed
 
 func _input(event):
 	if not is_multiplayer_authority(): return
 	
-	# NEW: Place Wall Logic (Right Click)
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		if scrap_amount >= 1:
 			var mouse_pos = get_global_mouse_position()
 			rpc_id(1, "request_place_wall", mouse_pos)
+		else:
+			print("Not enough scrap to build wall!")
 
-# --- INTERACTION COMPONENTS ---
 func _setup_interaction_components():
 	interaction_area = Area2D.new()
 	var col = CollisionShape2D.new()
@@ -107,7 +160,7 @@ func _setup_interaction_components():
 	add_child(score_label)
 
 func handle_interaction(delta):
-	if current_pile != null and Input.is_action_pressed("Interact"):
+	if current_pile != null and Input.is_action_pressed("ui_accept"):
 		interact_timer += delta
 		progress_bar.visible = true
 		progress_bar.value = interact_timer
@@ -123,7 +176,9 @@ func handle_interaction(delta):
 		progress_bar.visible = false
 
 func _on_area_entered(area):
-	if area.is_in_group("scrap"): current_pile = area
+	if area.is_in_group("scrap"): 
+		current_pile = area
+
 func _on_area_exited(area):
 	if area == current_pile: current_pile = null
 
@@ -141,29 +196,32 @@ func request_collect_scrap(pile_path):
 			if player_node:
 				player_node.rpc("add_scrap", 10)
 			pile.collect()
+		else:
+			print("Server Error: Scrap pile not found at path ", pile_path)
 
-# NEW: Server handles wall placement
 @rpc("any_peer", "call_local")
 func request_place_wall(pos):
 	if multiplayer.is_server():
-		# Verify we have enough scrap
 		if scrap_amount >= 1:
-			# Deduct 1 scrap (using add_scrap with negative number)
 			rpc("add_scrap", -1)
 			
-			# Spawn the wall
-			# Important: We load the scene here because player.gd doesn't have the export variable
-			var wall_scn = load("res://wall.tscn") 
-			if wall_scn:
+			if ResourceLoader.exists("res://wall.tscn"):
+				var wall_scn = load("res://wall.tscn") 
 				var wall = wall_scn.instantiate()
 				wall.global_position = pos
 				wall.name = "Wall_" + str(randi())
-				get_parent().add_child(wall, true) # Add to Players container so Spawner sees it
+				get_parent().add_child(wall, true) 
+			else:
+				print("CRITICAL ERROR: 'res://wall.tscn' not found!")
 
-@rpc("call_local", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func add_scrap(amount):
 	scrap_amount += amount
 	score_label.text = "Scrap: " + str(scrap_amount)
+	
+	# CALL VISUAL UPDATE HERE (Event-Driven)
+	update_inventory_visuals()
+	
 	score_label.modulate = Color(1, 1, 0)
 	await get_tree().create_timer(0.2).timeout
 	score_label.modulate = Color(1, 1, 1)
