@@ -239,7 +239,7 @@ func _setup_interaction_components():
 	add_child(fabric_label)
 
 func handle_interaction(delta):
-	if current_pile != null and Input.is_action_pressed("ui_accept"):
+	if current_pile != null and Input.is_action_pressed("Interact"):
 		interact_timer += delta
 		progress_bar.visible = true
 		progress_bar.value = interact_timer
