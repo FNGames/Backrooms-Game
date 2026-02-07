@@ -6,7 +6,47 @@
 [ext_resource type="PackedScene" uid="uid://bo33kfnad8r3a" path="res://wall.tscn" id="4_0hol4"]
 [ext_resource type="PackedScene" uid="uid://brg2i483bkg6s" path="res://fabric.tscn" id="5_d21ai"]
 [ext_resource type="Texture2D" uid="uid://dj7c2vkpv8omu" path="res://00_backrooms-1024x576.jpg" id="5_kdubu"]
+[ext_resource type="Script" uid="uid://cewoqa6ututqm" path="res://main_menu.gd" id="6_4d7sh"]
 [ext_resource type="Texture2D" uid="uid://cye84tw2cpdmn" path="res://Play.png" id="6_d21ai"]
+[ext_resource type="Script" uid="uid://d3trudvj1rao1" path="res://button.gd" id="9_hqns4"]
+[ext_resource type="Texture2D" uid="uid://cge66kqsbx10" path="res://spritesheet-table-427-240.png" id="9_ir8iy"]
+[ext_resource type="Texture2D" uid="uid://dfnbdbkttk3vt" path="res://Play-export.png" id="10_x0ka3"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hqns4"]
+atlas = ExtResource("9_ir8iy")
+region = Rect2(0, 0, 320, 240)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x0ka3"]
+atlas = ExtResource("9_ir8iy")
+region = Rect2(320, 0, 320, 240)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0h7mo"]
+atlas = ExtResource("9_ir8iy")
+region = Rect2(640, 0, 320, 240)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nr8wp"]
+atlas = ExtResource("9_ir8iy")
+region = Rect2(960, 0, 320, 240)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_d2bti"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hqns4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_x0ka3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0h7mo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nr8wp")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
 
 [node name="Main" type="Node2D" unique_id=1699848197]
 script = ExtResource("1_wtcfe")
@@ -53,7 +93,7 @@ text = "Ready"
 layout_mode = 2
 
 [node name="Main Menu" type="CanvasLayer" parent="." unique_id=473372722]
-visible = false
+script = ExtResource("6_4d7sh")
 
 [node name="Sprite2D" type="Sprite2D" parent="Main Menu" unique_id=187019293]
 texture_filter = 1
@@ -81,14 +121,34 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 28.855
-offset_top = 265.13
-offset_right = 116.854996
-offset_bottom = 293.13004
+offset_left = 88.00001
+offset_top = 264.0
+offset_right = 176.0
+offset_bottom = 292.00003
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(1.445, 1.24)
 icon = ExtResource("6_d21ai")
+flat = true
+script = ExtResource("9_hqns4")
+
+[node name="PlayExport" type="Sprite2D" parent="Main Menu/Control/Button" unique_id=650715646]
+visible = false
+position = Vector2(16.609001, 32.25807)
+scale = Vector2(0.6920416, 0.8064517)
+texture = ExtResource("10_x0ka3")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Main Menu" unique_id=1041645310]
+visible = false
+texture_filter = 1
+position = Vector2(576, 324.00003)
+scale = Vector2(3.5999997, 2.7)
+sprite_frames = SubResource("SpriteFrames_d2bti")
+frame_progress = 0.5646285
+speed_scale = 5.0
 
 [connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/HostButton" to="." method="_on_host_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/JoinButton" to="." method="_on_join_button_pressed"]
+[connection signal="mouse_entered" from="Main Menu/Control/Button" to="Main Menu/Control/Button" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="Main Menu/Control/Button" to="Main Menu/Control/Button" method="_on_mouse_exited"]
+[connection signal="pressed" from="Main Menu/Control/Button" to="Main Menu" method="_on_button_pressed"]
