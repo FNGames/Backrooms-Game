@@ -6,6 +6,7 @@ extends CanvasLayer
 @onready var fuzz_sound: AudioStreamPlayer2D = $FuzzSound
 @onready var humming: AudioStreamPlayer2D = $Humming
 @onready var vhsclcik: AudioStreamPlayer2D = $VHSCLCIK
+@onready var bg_music: AudioStreamPlayer2D = $"BG MUSIC"
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -30,3 +31,4 @@ func _on_button_pressed() -> void:
 	await get_tree().create_timer(1.1).timeout
 	blue_screen.hide()
 	main_menu.hide()
+	get_tree().change_scene_to_file("res://lobby.tscn")
