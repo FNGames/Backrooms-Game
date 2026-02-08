@@ -15,6 +15,7 @@ const BROADCAST_PORT = 8911
 @onready var code_entry = $CanvasLayer/LobbyUI/VBoxContainer/CodeEntry
 @onready var status_label = $CanvasLayer/LobbyUI/VBoxContainer/StatusLabel
 @onready var vbox = $CanvasLayer/LobbyUI/VBoxContainer
+@onready var bg_music: AudioStreamPlayer2D = $"BG MUSIC"
 
 # Dynamic UI Nodes
 var address_entry: LineEdit 
@@ -130,6 +131,7 @@ func _add_server_button(name, ip, port):
 
 # --- HOSTING ---
 func _on_host_button_pressed():
+	bg_music.stop()
 	_cleanup_connection()
 	
 	listener.close()
@@ -158,6 +160,7 @@ func _on_host_button_pressed():
 
 # --- JOINING ---
 func _on_join_button_pressed():
+	bg_music.stop()
 	var ip = address_entry.text.strip_edges()
 	var port = get_port_from_code(code_entry.text)
 	

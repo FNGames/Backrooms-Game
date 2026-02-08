@@ -4,8 +4,10 @@
 [ext_resource type="Texture2D" uid="uid://chjat7jo8iycx" path="res://male_hero_template.png" id="2_onrkg"]
 [ext_resource type="Texture2D" uid="uid://ddbl0t451ek0b" path="res://inv_placeholder.png" id="3_i3pqv"]
 [ext_resource type="Texture2D" uid="uid://byksk1yef41sn" path="res://Red Placholder.png" id="4_hqtel"]
+[ext_resource type="Texture2D" uid="uid://dca6m32itwmq2" path="res://recording_red.png" id="5_sweqy"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hqtel"]
+size = Vector2(11.764706, 20)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_i3pqv"]
 atlas = ExtResource("2_onrkg")
@@ -160,6 +162,9 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_sweqy"]
+radius = 88.362885
+
 [node name="Player" type="CharacterBody2D" unique_id=1593526875]
 script = ExtResource("1_onrkg")
 recipes = Array[Dictionary]([{
@@ -174,9 +179,16 @@ recipes = Array[Dictionary]([{
 "output_amount": 1,
 "output_name": "bandage",
 "scrap_cost": 0
+}, {
+"fabric_cost": 0,
+"name": "MetalTest",
+"output_amount": 1,
+"output_name": "fabric",
+"scrap_cost": 10
 }])
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=789898183]
+position = Vector2(-2.0000007, 0)
 scale = Vector2(6.46, 6.46)
 shape = SubResource("RectangleShape2D_hqtel")
 
@@ -191,6 +203,9 @@ scale = Vector2(3.975, 3.975)
 sprite_frames = SubResource("SpriteFrames_4flbx")
 animation = &"idle"
 frame_progress = 0.8509199
+
+[node name="Col" type="CollisionShape2D" parent="." unique_id=1778995245]
+shape = SubResource("CircleShape2D_sweqy")
 
 [node name="Inv" type="CanvasLayer" parent="." unique_id=2111573900]
 
@@ -246,4 +261,89 @@ position = Vector2(-3.4205246, -16.297787)
 scale = Vector2(0.27087516, 0.27087516)
 texture = ExtResource("4_hqtel")
 
-[connection signal="pressed" from="Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder/Button" to="." method="_on_button_pressed"]
+[node name="CraftingArea" type="Control" parent="Inv/InvControl" unique_id=1264207511]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CraftScrap1" type="Sprite2D" parent="Inv/InvControl/CraftingArea" unique_id=753041058]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(776, 176.00002)
+scale = Vector2(2.692499, 2.692499)
+texture = ExtResource("4_hqtel")
+
+[node name="CraftScrap2" type="Sprite2D" parent="Inv/InvControl/CraftingArea" unique_id=2004105872]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(888.00006, 168)
+scale = Vector2(2.692499, 2.692499)
+texture = ExtResource("4_hqtel")
+
+[node name="CraftScrap3" type="Sprite2D" parent="Inv/InvControl/CraftingArea" unique_id=441724115]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(848.00006, 192)
+scale = Vector2(2.692499, 2.692499)
+texture = ExtResource("4_hqtel")
+
+[node name="CraftScrap4" type="Sprite2D" parent="Inv/InvControl/CraftingArea" unique_id=1890071826]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(960, 184)
+scale = Vector2(2.692499, 2.692499)
+texture = ExtResource("4_hqtel")
+
+[node name="ReturnScrap" type="Button" parent="Inv/InvControl/CraftingArea" unique_id=176278676]
+layout_mode = 0
+offset_left = 722.0
+offset_top = 130.0
+offset_right = 1002.0
+offset_bottom = 354.0
+
+[node name="Craft" type="Button" parent="Inv/InvControl" unique_id=761354009]
+layout_mode = 0
+offset_left = 776.0
+offset_top = 520.0
+offset_right = 944.0
+offset_bottom = 624.0
+text = "Craft"
+
+[node name="CraftedItems" type="Control" parent="Inv/InvControl" unique_id=1203328260]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MetalIcon" type="Sprite2D" parent="Inv/InvControl/CraftedItems" unique_id=1198741238]
+visible = false
+position = Vector2(176, 496)
+texture = ExtResource("4_hqtel")
+
+[node name="Label" type="Label" parent="Inv/InvControl/CraftedItems/MetalIcon" unique_id=1187302292]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "x10"
+
+[node name="BandageIcon" type="Sprite2D" parent="Inv/InvControl/CraftedItems" unique_id=44735195]
+visible = false
+position = Vector2(344, 504)
+texture = ExtResource("5_sweqy")
+
+[node name="Label" type="Label" parent="Inv/InvControl/CraftedItems/BandageIcon" unique_id=558100107]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "x10"
+
+[node name="RecipeTooltip" type="Label" parent="Inv/InvControl" unique_id=1013754358]
+layout_mode = 0
+offset_left = 944.0
+offset_top = 504.0
+offset_right = 1017.0
+offset_bottom = 527.0
+text = "XRECIPEX"
+
+[connection signal="pressed" from="Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder/Button" to="." method="_on_scrap_button_pressed"]
+[connection signal="pressed" from="Inv/InvControl/CraftingArea/ReturnScrap" to="." method="_on_crafting_scrap_pressed"]
+[connection signal="mouse_entered" from="Inv/InvControl/Craft" to="." method="_on_combine_button_mouse_entered"]
+[connection signal="mouse_exited" from="Inv/InvControl/Craft" to="." method="_on_combine_button_mouse_exited"]
+[connection signal="pressed" from="Inv/InvControl/Craft" to="." method="_on_combine_button_pressed"]
