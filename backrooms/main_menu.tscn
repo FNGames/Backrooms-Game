@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" uid="uid://cewoqa6ututqm" path="res://main_menu.gd" id="1_ljai8"]
 [ext_resource type="Texture2D" uid="uid://dj7c2vkpv8omu" path="res://00_backrooms-1024x576.jpg" id="2_minev"]
+[ext_resource type="Script" uid="uid://q0x4n7ndvwg8" path="res://smoothbg.gd" id="3_4kwkp"]
 [ext_resource type="Script" uid="uid://d3trudvj1rao1" path="res://button.gd" id="3_j4lre"]
-[ext_resource type="Script" uid="uid://b4s8iq5r53i8e" path="res://move_bg.gd" id="3_r6jt1"]
 [ext_resource type="Texture2D" uid="uid://dfnbdbkttk3vt" path="res://Play-export.png" id="4_l05ls"]
 [ext_resource type="Script" uid="uid://r1ssbexucq5u" path="res://button_2.gd" id="5_r6jt1"]
 [ext_resource type="FontFile" uid="uid://yuad5ds6hd6l" path="res://PeaberryBase.ttf" id="6_4kwkp"]
@@ -16,6 +16,7 @@
 [ext_resource type="AudioStream" uid="uid://ck2jmajpogrm5" path="res://Tick.mp3" id="10_kntsg"]
 [ext_resource type="AudioStream" uid="uid://xygw5nf4rrbl" path="res://Humming.mp3" id="11_b4sy0"]
 [ext_resource type="AudioStream" uid="uid://dispebmj44lsq" path="res://VHSCLICK.mp3" id="12_8kasr"]
+[ext_resource type="Script" uid="uid://ewlcq48m4fly" path="res://option_button_hide.gd" id="17_4kwkp"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_uemoi"]
 font = ExtResource("6_4kwkp")
@@ -375,7 +376,7 @@ texture_repeat = 1
 position = Vector2(592, 328)
 scale = Vector2(1.275, 1.275)
 texture = ExtResource("2_minev")
-script = ExtResource("3_r6jt1")
+script = ExtResource("3_4kwkp")
 
 [node name="Control" type="Control" parent="." unique_id=61782631]
 layout_mode = 3
@@ -508,9 +509,51 @@ autoplay = true
 [node name="VHSCLCIK" type="AudioStreamPlayer2D" parent="." unique_id=1068621244]
 stream = ExtResource("12_8kasr")
 
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1694712463]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -276.0
+offset_top = -195.75
+offset_right = 276.0
+offset_bottom = 195.75
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("17_4kwkp")
+
+[node name="Label" type="Label" parent="VBoxContainer" unique_id=71389374]
+layout_mode = 2
+theme_override_font_sizes/font_size = 45
+text = "Options Menu"
+horizontal_alignment = 1
+
+[node name="Mute" type="CheckButton" parent="VBoxContainer" unique_id=1326913640]
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+text = "MUTE"
+
+[node name="OptionButton" type="OptionButton" parent="VBoxContainer" unique_id=1227748061]
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+selected = 0
+item_count = 2
+popup/item_0/text = "MUTE"
+popup/item_0/id = 0
+popup/item_1/text = "UNMUTE"
+popup/item_1/id = 1
+
+[node name="Button" type="Button" parent="VBoxContainer" unique_id=754886183]
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+text = "Back"
+
 [connection signal="mouse_entered" from="Control/Play" to="Control/Play" method="_on_mouse_entered"]
 [connection signal="mouse_exited" from="Control/Play" to="Control/Play" method="_on_mouse_exited"]
 [connection signal="pressed" from="Control/Play" to="." method="_on_button_pressed"]
 [connection signal="mouse_entered" from="Control/Options" to="Control/Options" method="_on_mouse_entered"]
 [connection signal="mouse_exited" from="Control/Options" to="Control/Options" method="_on_mouse_exited"]
 [connection signal="pressed" from="Control/Options" to="Control/Options" method="_on_pressed"]
+[connection signal="toggled" from="VBoxContainer/Mute" to="VBoxContainer" method="_on_mute_toggled"]
+[connection signal="pressed" from="VBoxContainer/Button" to="VBoxContainer" method="_on_button_pressed"]
