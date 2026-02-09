@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cewoqa6ututqm" path="res://main_menu.gd" id="1_ljai8"]
 [ext_resource type="Texture2D" uid="uid://dj7c2vkpv8omu" path="res://00_backrooms-1024x576.jpg" id="2_minev"]
 [ext_resource type="Script" uid="uid://d3trudvj1rao1" path="res://button.gd" id="3_j4lre"]
+[ext_resource type="Script" uid="uid://b4s8iq5r53i8e" path="res://move_bg.gd" id="3_r6jt1"]
 [ext_resource type="Texture2D" uid="uid://dfnbdbkttk3vt" path="res://Play-export.png" id="4_l05ls"]
 [ext_resource type="Script" uid="uid://r1ssbexucq5u" path="res://button_2.gd" id="5_r6jt1"]
 [ext_resource type="FontFile" uid="uid://yuad5ds6hd6l" path="res://PeaberryBase.ttf" id="6_4kwkp"]
@@ -374,6 +375,7 @@ texture_repeat = 1
 position = Vector2(592, 328)
 scale = Vector2(1.275, 1.275)
 texture = ExtResource("2_minev")
+script = ExtResource("3_r6jt1")
 
 [node name="Control" type="Control" parent="." unique_id=61782631]
 layout_mode = 3

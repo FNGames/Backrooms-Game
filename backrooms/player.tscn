@@ -172,19 +172,19 @@ recipes = Array[Dictionary]([{
 "name": "Refined Metal",
 "output_amount": 10,
 "output_name": "metal",
-"scrap_cost": 10
+"scrap_cost": 20
 }, {
-"fabric_cost": 10,
+"fabric_cost": 0,
 "name": "Bandage",
 "output_amount": 1,
 "output_name": "bandage",
-"scrap_cost": 0
+"scrap_cost": 10
 }, {
 "fabric_cost": 0,
 "name": "MetalTest",
 "output_amount": 1,
 "output_name": "fabric",
-"scrap_cost": 10
+"scrap_cost": 30
 }])
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=789898183]
@@ -325,7 +325,6 @@ offset_bottom = 23.0
 text = "x10"
 
 [node name="BandageIcon" type="Sprite2D" parent="Inv/InvControl/CraftedItems" unique_id=44735195]
-visible = false
 position = Vector2(344, 504)
 texture = ExtResource("5_sweqy")
 
@@ -333,6 +332,12 @@ texture = ExtResource("5_sweqy")
 offset_right = 40.0
 offset_bottom = 23.0
 text = "x10"
+
+[node name="UseBandage" type="Button" parent="Inv/InvControl/CraftedItems/BandageIcon" unique_id=283368397]
+offset_left = -64.0
+offset_top = -32.0
+offset_right = 34.0
+offset_bottom = 40.0
 
 [node name="RecipeTooltip" type="Label" parent="Inv/InvControl" unique_id=1013754358]
 layout_mode = 0
@@ -342,8 +347,14 @@ offset_right = 1017.0
 offset_bottom = 527.0
 text = "XRECIPEX"
 
+[node name="Health" type="Label" parent="Inv/InvControl" unique_id=637586034]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
 [connection signal="pressed" from="Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder/Button" to="." method="_on_scrap_button_pressed"]
 [connection signal="pressed" from="Inv/InvControl/CraftingArea/ReturnScrap" to="." method="_on_crafting_scrap_pressed"]
 [connection signal="mouse_entered" from="Inv/InvControl/Craft" to="." method="_on_combine_button_mouse_entered"]
 [connection signal="mouse_exited" from="Inv/InvControl/Craft" to="." method="_on_combine_button_mouse_exited"]
 [connection signal="pressed" from="Inv/InvControl/Craft" to="." method="_on_combine_button_pressed"]
+[connection signal="pressed" from="Inv/InvControl/CraftedItems/BandageIcon/UseBandage" to="." method="_on_bandage_button_pressed"]

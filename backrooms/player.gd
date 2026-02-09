@@ -3,8 +3,7 @@ extends CharacterBody2D
 # --- CONFIGURATION ---
 @export var speed: float = 300.0
 @export var lerp_speed: float = 20.0
-
-
+@export var max_health: int = 100 # New Max Health
 
 # --- CRAFTING RECIPES ---
 @export var recipes: Array[Dictionary] = [
@@ -34,7 +33,8 @@ var is_flipped: bool = false
 var network_tick_rate: float = 0.05 
 var current_tick: float = 0.0
 
-# --- RESOURCES ---
+# --- RESOURCES & STATS ---
+var health: int = 100 # New Health Var
 var scrap_amount: int = 0
 var fabric_amount: int = 0 
 var crafted_inventory: Dictionary = {} 
@@ -53,8 +53,7 @@ var score_label: Label
 var fabric_label: Label 
 var interaction_area: Area2D
 
-@onready var inv: CanvasLayer = $Inv
-
+@onready var inventory: Sprite2D = $Inv/InvControl/Sprite2D
 
 # --- INVENTORY VISUALS (Left Side) ---
 @onready var red_placholder: Sprite2D = $Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder
@@ -68,18 +67,23 @@ var interaction_area: Area2D
 @onready var craft_scrap_3: Sprite2D = $Inv/InvControl/CraftingArea/CraftScrap3
 @onready var craft_scrap_4: Sprite2D = $Inv/InvControl/CraftingArea/CraftScrap4
 
-# --- CRAFTED ITEMS (New Area) ---
+# --- CRAFTED ITEMS ---
 @onready var metal_icon: Sprite2D = $Inv/InvControl/CraftedItems/MetalIcon
 @onready var bandage_icon: Sprite2D = $Inv/InvControl/CraftedItems/BandageIcon
 
-# --- TOOLTIP UI (New) ---
-# Create a Label named "RecipeTooltip" inside InvControl
+# --- TOOLTIP UI ---
 @onready var recipe_tooltip: Label = $Inv/InvControl/RecipeTooltip
+
+# --- HEALTH UI ---
+# Create this Label inside InvControl or reuse StatusLabel if you want
+@onready var health_label: Label = $Inv/InvControl/HealthLabel 
 
 func _ready():
 	motion_mode = MOTION_MODE_FLOATING
 	var id = name.to_int()
 	if id != 0: set_multiplayer_authority(id)
+	
+	health = max_health # Start full
 	
 	print("Player Ready. Name: ", name, " Authority: ", get_multiplayer_authority())
 	
@@ -96,9 +100,8 @@ func _ready():
 		modulate = Color(0.5, 1, 0.5) 
 		
 		if has_node("Inv"): $Inv.visible = true
-		inv.visible = false 
+		inventory.visible = false 
 		
-		# Init visuals
 		if recipe_tooltip: recipe_tooltip.hide()
 		update_inventory_visuals() 
 		
@@ -114,8 +117,10 @@ func _ready():
 
 func _physics_process(delta):
 	if is_multiplayer_authority():
+		# Kept this as ui_accept (Space/Enter) to keep it separate from Interact
+		# You can change "ui_accept" to "inventory" if you made an input map for it.
 		if Input.is_action_just_pressed("ui_accept"):
-			inv.visible = not inv.visible
+			inventory.visible = not inventory.visible
 			
 		handle_input()
 		handle_interaction(delta) 
@@ -132,6 +137,13 @@ func update_inventory_visuals():
 	# --- 1. PUBLIC VISUALS (Labels) ---
 	if score_label: score_label.text = "Scrap: " + str(scrap_amount)
 	if fabric_label: fabric_label.text = "Fabric: " + str(fabric_amount)
+	
+	# NEW: Health Display
+	if health_label: 
+		health_label.text = "HP: " + str(health) + "/" + str(max_health)
+		# Color change if low health
+		if health < 30: health_label.modulate = Color(1, 0, 0) # Red
+		else: health_label.modulate = Color(0, 1, 0) # Green
 
 	# --- 2. PRIVATE VISUALS (Bag & Table) ---
 	if not is_multiplayer_authority(): return
@@ -174,26 +186,18 @@ func update_inventory_visuals():
 
 # --- BUTTONS ---
 
-# NEW: Hover Logic for Combine Button
-# Connect 'mouse_entered' signal from CombineButton to this function
 func _on_combine_button_mouse_entered():
 	if not is_multiplayer_authority(): return
 	if not recipe_tooltip: return
-	
 	recipe_tooltip.show()
 	recipe_tooltip.text = "Recipes:\n"
-	
 	var found_any = false
 	for r in recipes:
-		# Check if table contents meet the requirement for this recipe
 		if scrap_in_crafting >= r["scrap_cost"] and fabric_in_crafting >= r["fabric_cost"]:
 			recipe_tooltip.text += "-> " + r["name"] + "\n"
 			found_any = true
-	
-	if not found_any:
-		recipe_tooltip.text += "(None)"
+	if not found_any: recipe_tooltip.text += "(None)"
 
-# Connect 'mouse_exited' signal from CombineButton to this function
 func _on_combine_button_mouse_exited():
 	if recipe_tooltip: recipe_tooltip.hide()
 
@@ -215,12 +219,37 @@ func _on_combine_button_pressed():
 			break
 	if found_recipe != -1: rpc_id(1, "request_craft_from_table", found_recipe)
 
+# NEW: Bandage Button Logic
+# Connect the button ON TOP of the BandageIcon to this function!
+func _on_bandage_button_pressed():
+	if not is_multiplayer_authority(): return
+	
+	if crafted_inventory.get("bandage", 0) > 0:
+		if health < max_health:
+			rpc_id(1, "request_use_item", "bandage")
+		else:
+			print("Health is already full!")
+	else:
+		print("No bandages!")
+
+# --- DAMAGE LOGIC ---
+# Called by Damage Zones or Enemies
+func take_damage(amount: int):
+	# Only the server should process damage to ensure fairness
+	if multiplayer.is_server():
+		health -= amount
+		if health < 0: health = 0
+		# Sync new health to everyone
+		sync_state_to_everyone()
+		print(name + " took damage. HP: " + str(health))
+
 # --- NETWORKING LOGIC ---
 
 func sync_state_to_everyone():
 	if not multiplayer.is_server(): return
 	
-	rpc("update_resources", scrap_amount, fabric_amount, scrap_in_crafting, fabric_in_crafting)
+	# UPDATED: Now sending 'health' as well!
+	rpc("update_resources", scrap_amount, fabric_amount, scrap_in_crafting, fabric_in_crafting, health)
 	
 	var inv_json = JSON.stringify(crafted_inventory)
 	rpc("update_crafted_inventory_safe", inv_json)
@@ -255,17 +284,38 @@ func request_craft_from_table(index):
 			crafted_inventory[out_name] += r["output_amount"]
 			
 			sync_state_to_everyone()
-			print("Server: Crafted ", out_name)
 
-# --- RELIABLE UPDATE (FIXED: Added any_peer) ---
-
+# NEW: Item Usage Logic
 @rpc("any_peer", "call_local", "reliable")
-func update_resources(s_amt, f_amt, s_table, f_table):
-	if not multiplayer.is_server(): print("Client: Resources Updated. Scrap: ", s_amt)
+func request_use_item(item_name):
+	if multiplayer.is_server():
+		# Verify they have the item
+		if crafted_inventory.get(item_name, 0) > 0:
+			
+			# Apply Effects
+			if item_name == "bandage":
+				health += 100
+				if health > max_health: health = max_health
+				print("Player Healed! HP: ", health)
+			
+			# Consume Item
+			crafted_inventory[item_name] -= 1
+			if crafted_inventory[item_name] <= 0:
+				crafted_inventory.erase(item_name)
+			
+			sync_state_to_everyone()
+
+# --- RELIABLE UPDATE ---
+
+# UPDATED: Accepts health (hp) now
+@rpc("any_peer", "call_local", "reliable")
+func update_resources(s_amt, f_amt, s_table, f_table, hp):
+	if not multiplayer.is_server(): print("Client Update. HP: ", hp)
 	scrap_amount = s_amt
 	fabric_amount = f_amt
 	scrap_in_crafting = s_table
 	fabric_in_crafting = f_table
+	health = hp # Sync Health
 	update_inventory_visuals()
 
 @rpc("any_peer", "call_local", "reliable")
@@ -284,13 +334,10 @@ func request_collect_resource(pile_path, type):
 	if multiplayer.is_server():
 		var pile = get_node_or_null(pile_path)
 		if pile != null:
-			print("Server: Collecting ", type, " for ", name)
-			
 			if type == "fabric":
 				self.fabric_amount += 5
 			else:
 				self.scrap_amount += 10
-			
 			sync_state_to_everyone()
 			rpc("trigger_pickup_visuals", type)
 			pile.collect()
@@ -303,23 +350,21 @@ func _send_network_updates():
 	if new_anim != current_anim:
 		current_anim = new_anim
 		rpc("play_animation", current_anim)
-		
 	if velocity.x != 0:
 		var should_flip = velocity.x < 0
 		if should_flip != is_flipped:
 			is_flipped = should_flip
 			rpc("update_flip", is_flipped)
-	
 	if can_send_updates:
 		rpc_id(1, "update_position_server", global_position)
 
+# CHANGED: Uses "left", "right", "up", "down" from your Input Map
 func handle_input():
 	var input_direction = Input.get_vector("left", "right", "up", "down")
 	velocity = input_direction * speed
 
 func _input(event):
 	if not is_multiplayer_authority(): return
-	
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		if scrap_amount >= 1:
 			var mouse_pos = get_global_mouse_position()
@@ -329,7 +374,7 @@ func _setup_interaction_components():
 	interaction_area = Area2D.new()
 	var col = CollisionShape2D.new()
 	col.shape = CircleShape2D.new()
-	col.shape.radius = 88.36
+	col.shape.radius = 40
 	interaction_area.add_child(col)
 	add_child(interaction_area)
 	
@@ -355,9 +400,17 @@ func _setup_interaction_components():
 	fabric_label.position = Vector2(-20, 60) 
 	fabric_label.modulate = Color(0.8, 0.8, 1.0) 
 	add_child(fabric_label)
+	
+	# Create Health Label if not manual
+	health_label = Label.new()
+	health_label.text = "HP: 100"
+	health_label.position = Vector2(-20, -80)
+	health_label.modulate = Color(0, 1, 0)
+	add_child(health_label)
 
+# CHANGED: Uses "interact" from your Input Map
 func handle_interaction(delta):
-	if current_pile != null and Input.is_action_pressed("Interact"):
+	if current_pile != null and Input.is_action_pressed("interact"):
 		interact_timer += delta
 		progress_bar.visible = true
 		progress_bar.value = interact_timer
@@ -387,7 +440,6 @@ func request_place_wall(pos):
 		if scrap_amount >= 1:
 			scrap_amount -= 1
 			sync_state_to_everyone()
-			
 			if ResourceLoader.exists("res://wall.tscn"):
 				var wall_scn = load("res://wall.tscn") 
 				var wall = wall_scn.instantiate()

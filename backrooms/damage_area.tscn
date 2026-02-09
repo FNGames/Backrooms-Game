@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://bw7k3utgiowvx"]
+
+[ext_resource type="Script" uid="uid://cbmi02ckilj8o" path="res://deathtrap.gd" id="1_6hgqe"]
+[ext_resource type="Texture2D" uid="uid://crdnecmw2t50i" path="res://damagezone.png" id="2_heqr2"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_afmvt"]
+
+[node name="Area2D" type="Area2D" unique_id=931011032]
+script = ExtResource("1_6hgqe")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1506570479]
+scale = Vector2(9.075, 9.075)
+shape = SubResource("RectangleShape2D_afmvt")
+
+[node name="Damagezone" type="Sprite2D" parent="." unique_id=2001942348]
+texture_filter = 1
+texture_repeat = 1
+position = Vector2(-1.9073486e-06, -5.722046e-06)
+scale = Vector2(2.75, 2.7499998)
+texture = ExtResource("2_heqr2")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

@@ -5,7 +5,15 @@
 [ext_resource type="PackedScene" uid="uid://cfb42ydoohekm" path="res://scrap.tscn" id="3_8ldoj"]
 [ext_resource type="PackedScene" uid="uid://bo33kfnad8r3a" path="res://wall.tscn" id="4_ein8w"]
 [ext_resource type="PackedScene" uid="uid://brg2i483bkg6s" path="res://fabric.tscn" id="5_gm5bj"]
+[ext_resource type="Texture2D" uid="uid://dvlqgqluqfxq1" path="res://white_corner.png" id="6_g30ku"]
+[ext_resource type="Texture2D" uid="uid://fpbawu8x0lhs" path="res://lobbybg.png" id="6_up7ya"]
 [ext_resource type="AudioStream" uid="uid://dt8m4tlfweult" path="res://Bg music test one.mp3" id="6_x4164"]
+[ext_resource type="Script" uid="uid://b4s8iq5r53i8e" path="res://move_bg.gd" id="7_7pn7i"]
+[ext_resource type="PackedScene" uid="uid://bw7k3utgiowvx" path="res://damage_area.tscn" id="7_8ldoj"]
+[ext_resource type="Texture2D" uid="uid://dca6m32itwmq2" path="res://recording_red.png" id="7_up7ya"]
+[ext_resource type="Script" uid="uid://28d2ajblj1ef" path="res://recording_red.gd" id="8_mcopp"]
+[ext_resource type="Texture2D" uid="uid://c3wsgjh644wjg" path="res://statics.png" id="10_nu6hm"]
+[ext_resource type="Script" uid="uid://ccuvpedo2jhnd" path="res://statics.gd" id="11_7pn7i"]
 
 [node name="Main" type="Node2D" unique_id=1699848197]
 script = ExtResource("1_1gg6n")
@@ -23,6 +31,10 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 32.0
+offset_right = 40.0
+offset_bottom = 32.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -51,9 +63,60 @@ text = "Ready"
 [node name="CodeEntry" type="LineEdit" parent="CanvasLayer/LobbyUI/VBoxContainer" unique_id=32353559]
 layout_mode = 2
 
+[node name="Lobbybg" type="Sprite2D" parent="CanvasLayer/LobbyUI" unique_id=1379397167]
+z_index = -1
+position = Vector2(528, 296.00003)
+scale = Vector2(1.3144016, 1.1914895)
+texture = ExtResource("6_up7ya")
+script = ExtResource("7_7pn7i")
+
+[node name="Node2D" type="Node2D" parent="CanvasLayer/LobbyUI" unique_id=526625358]
+position = Vector2(1080, 0)
+rotation = 1.5707964
+
+[node name="WhiteCorner" type="Sprite2D" parent="CanvasLayer/LobbyUI/Node2D" unique_id=217937858]
+texture = ExtResource("6_g30ku")
+
+[node name="WhiteCorner2" type="Sprite2D" parent="CanvasLayer/LobbyUI/Node2D" unique_id=222052032]
+position = Vector2(4.7683716e-05, 1088)
+rotation = -1.5707964
+texture = ExtResource("6_g30ku")
+
+[node name="WhiteCorner3" type="Sprite2D" parent="CanvasLayer/LobbyUI/Node2D" unique_id=1185543985]
+position = Vector2(584.00006, 1088)
+rotation = -3.1415925
+texture = ExtResource("6_g30ku")
+
+[node name="RecordingRed" type="Sprite2D" parent="CanvasLayer/LobbyUI/Node2D" unique_id=1574803712]
+position = Vector2(32.000004, 32)
+rotation = 1.5707965
+texture = ExtResource("7_up7ya")
+hframes = 2
+script = ExtResource("8_mcopp")
+
+[node name="WhiteCorner4" type="Sprite2D" parent="CanvasLayer/LobbyUI/Node2D" unique_id=1758668505]
+position = Vector2(584, 0)
+rotation = 1.5707965
+texture = ExtResource("6_g30ku")
+
+[node name="Statics" type="Sprite2D" parent="CanvasLayer/LobbyUI" unique_id=1896411494]
+z_index = 2
+position = Vector2(540, 304)
+scale = Vector2(1.1764706, 0.94832826)
+texture = ExtResource("10_nu6hm")
+hframes = 3
+script = ExtResource("11_7pn7i")
+frame_count = 2
+
 [node name="BG MUSIC" type="AudioStreamPlayer2D" parent="." unique_id=2066304331]
 stream = ExtResource("6_x4164")
 autoplay = true
+
+[node name="Area2D" parent="." unique_id=931011032 instance=ExtResource("7_8ldoj")]
+position = Vector2(840, 952)
+
+[node name="Area2D2" parent="." unique_id=986203593 instance=ExtResource("7_8ldoj")]
+position = Vector2(808, 336)
 
 [connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/HostButton" to="." method="_on_host_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/JoinButton" to="." method="_on_join_button_pressed"]
