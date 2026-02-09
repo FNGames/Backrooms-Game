@@ -3,7 +3,8 @@ extends CharacterBody2D
 # --- CONFIGURATION ---
 @export var speed: float = 300.0
 @export var lerp_speed: float = 20.0
-@export var max_health: int = 100 # New Max Health
+@export var max_health: int = 100 
+@export var grid_size: int = 40 # Size of grid cells for walls
 
 # --- CRAFTING RECIPES ---
 @export var recipes: Array[Dictionary] = [
@@ -20,6 +21,13 @@ extends CharacterBody2D
 		"fabric_cost": 5,
 		"output_name": "bandage",
 		"output_amount": 1
+	},
+	{
+		"name": "Wall Bundle",
+		"scrap_cost": 10,
+		"fabric_cost": 0,
+		"output_name": "wall",
+		"output_amount": 5
 	}
 ]
 
@@ -29,12 +37,16 @@ var can_send_updates = false
 var current_anim: String = "idle" 
 var is_flipped: bool = false 
 
+# --- BUILDING STATE (NEW) ---
+var is_placing_wall: bool = false
+var ghost_wall: Sprite2D # Visual preview
+
 # --- NETWORK THROTTLE ---
 var network_tick_rate: float = 0.05 
 var current_tick: float = 0.0
 
 # --- RESOURCES & STATS ---
-var health: int = 100 # New Health Var
+var health: int = 100 
 var scrap_amount: int = 0
 var fabric_amount: int = 0 
 var crafted_inventory: Dictionary = {} 
@@ -53,29 +65,41 @@ var score_label: Label
 var fabric_label: Label 
 var interaction_area: Area2D
 
-@onready var inventory: Sprite2D = $Inv/InvControl/Sprite2D
+# UPDATED: Changed to CanvasLayer as requested
+@onready var inventory: CanvasLayer = $Inv
 
-# --- INVENTORY VISUALS (Left Side) ---
+# --- INVENTORY VISUALS (SCRAP) ---
 @onready var red_placholder: Sprite2D = $Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder
 @onready var red_placholder_2: Sprite2D = $Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder2
 @onready var red_placholder_3: Sprite2D = $Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder3
 @onready var red_placholder_4: Sprite2D = $Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder4
 
-# --- CRAFTING AREA VISUALS (Right Side) ---
+# --- INVENTORY VISUALS (FABRIC - NEW) ---
+# Make sure you create these nodes in Godot!
+@onready var fabric_placeholder: Sprite2D = $Inv/InvControl/Sprite2D/FabricAmount/FabricPlaceholder
+@onready var fabric_placeholder_2: Sprite2D = $Inv/InvControl/Sprite2D/FabricAmount/FabricPlaceholder2
+@onready var fabric_placeholder_3: Sprite2D = $Inv/InvControl/Sprite2D/FabricAmount/FabricPlaceholder3
+@onready var fabric_placeholder_4: Sprite2D = $Inv/InvControl/Sprite2D/FabricAmount/FabricPlaceholder4
+
+# --- CRAFTING AREA VISUALS (SCRAP) ---
 @onready var craft_scrap_1: Sprite2D = $Inv/InvControl/CraftingArea/CraftScrap1
 @onready var craft_scrap_2: Sprite2D = $Inv/InvControl/CraftingArea/CraftScrap2
 @onready var craft_scrap_3: Sprite2D = $Inv/InvControl/CraftingArea/CraftScrap3
 @onready var craft_scrap_4: Sprite2D = $Inv/InvControl/CraftingArea/CraftScrap4
 
+# --- CRAFTING AREA VISUALS (FABRIC - NEW) ---
+@onready var craft_fabric_1: Sprite2D = $Inv/InvControl/CraftingArea/CraftFabric1
+@onready var craft_fabric_2: Sprite2D = $Inv/InvControl/CraftingArea/CraftFabric2
+@onready var craft_fabric_3: Sprite2D = $Inv/InvControl/CraftingArea/CraftFabric3
+@onready var craft_fabric_4: Sprite2D = $Inv/InvControl/CraftingArea/CraftFabric4
+
 # --- CRAFTED ITEMS ---
 @onready var metal_icon: Sprite2D = $Inv/InvControl/CraftedItems/MetalIcon
 @onready var bandage_icon: Sprite2D = $Inv/InvControl/CraftedItems/BandageIcon
+@onready var wall_icon: Sprite2D = $Inv/InvControl/CraftedItems/WallIcon 
 
-# --- TOOLTIP UI ---
+# --- TOOLTIP & HEALTH ---
 @onready var recipe_tooltip: Label = $Inv/InvControl/RecipeTooltip
-
-# --- HEALTH UI ---
-# Create this Label inside InvControl or reuse StatusLabel if you want
 @onready var health_label: Label = $Inv/InvControl/HealthLabel 
 
 func _ready():
@@ -83,12 +107,26 @@ func _ready():
 	var id = name.to_int()
 	if id != 0: set_multiplayer_authority(id)
 	
-	health = max_health # Start full
+	health = max_health 
 	
-	print("Player Ready. Name: ", name, " Authority: ", get_multiplayer_authority())
+	# Fix Recipe List if stale
+	var has_wall_recipe = false
+	for r in recipes:
+		if r["name"] == "Wall Bundle":
+			has_wall_recipe = true
+			break
+	if not has_wall_recipe:
+		recipes.append({
+			"name": "Wall Bundle",
+			"scrap_cost": 10,
+			"fabric_cost": 0,
+			"output_name": "wall",
+			"output_amount": 5
+		})
 	
 	target_position = global_position
 	_setup_interaction_components()
+	_create_ghost_wall() 
 	
 	var camera = get_node_or_null("Camera2D")
 
@@ -99,8 +137,8 @@ func _ready():
 		camera.make_current()
 		modulate = Color(0.5, 1, 0.5) 
 		
-		if has_node("Inv"): $Inv.visible = true
-		inventory.visible = false 
+		# Initial Visibility State
+		if inventory: inventory.visible = false 
 		
 		if recipe_tooltip: recipe_tooltip.hide()
 		update_inventory_visuals() 
@@ -111,17 +149,37 @@ func _ready():
 		if camera: camera.enabled = false
 		modulate = Color(1, 0.5, 0.5) 
 		progress_bar.visible = false 
-		if has_node("Inv"): $Inv.visible = false
+		if inventory: inventory.visible = false
 	
 	if not craft_scrap_1: print("WARNING: CraftScrap1 node missing!")
 
+func _create_ghost_wall():
+	ghost_wall = Sprite2D.new()
+	var p = PlaceholderTexture2D.new()
+	p.size = Vector2(40, 40)
+	ghost_wall.texture = p
+	ghost_wall.modulate = Color(0, 1, 0, 0.5) 
+	ghost_wall.top_level = true 
+	ghost_wall.hide()
+	add_child(ghost_wall)
+
 func _physics_process(delta):
 	if is_multiplayer_authority():
-		# Kept this as ui_accept (Space/Enter) to keep it separate from Interact
-		# You can change "ui_accept" to "inventory" if you made an input map for it.
+		# Handle Inventory Toggle
 		if Input.is_action_just_pressed("ui_accept"):
-			inventory.visible = not inventory.visible
-			
+			if is_placing_wall:
+				is_placing_wall = false
+				ghost_wall.hide()
+				if inventory: inventory.visible = true
+			else:
+				if inventory: inventory.visible = not inventory.visible
+		
+		if is_placing_wall:
+			var mouse_pos = get_global_mouse_position()
+			var snapped_pos = mouse_pos.snapped(Vector2(grid_size, grid_size))
+			ghost_wall.global_position = snapped_pos
+			ghost_wall.show()
+		
 		handle_input()
 		handle_interaction(delta) 
 		move_and_slide()
@@ -133,45 +191,84 @@ func _physics_process(delta):
 	else:
 		global_position = global_position.lerp(target_position, lerp_speed * delta)
 
+func _input(event):
+	if not is_multiplayer_authority(): return
+	
+	if is_placing_wall and event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			var mouse_pos = get_global_mouse_position()
+			var snapped_pos = mouse_pos.snapped(Vector2(grid_size, grid_size))
+			rpc_id(1, "request_place_wall_item", snapped_pos)
+		
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			is_placing_wall = false
+			ghost_wall.hide()
+			if inventory: inventory.visible = true
+
+	elif not is_placing_wall and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		if scrap_amount >= 1:
+			var mouse_pos = get_global_mouse_position()
+			rpc_id(1, "request_place_wall", mouse_pos)
+
+# --- VISUALS ---
+
 func update_inventory_visuals():
-	# --- 1. PUBLIC VISUALS (Labels) ---
 	if score_label: score_label.text = "Scrap: " + str(scrap_amount)
 	if fabric_label: fabric_label.text = "Fabric: " + str(fabric_amount)
 	
-	# NEW: Health Display
 	if health_label: 
 		health_label.text = "HP: " + str(health) + "/" + str(max_health)
-		# Color change if low health
-		if health < 30: health_label.modulate = Color(1, 0, 0) # Red
-		else: health_label.modulate = Color(0, 1, 0) # Green
+		if health < 30: health_label.modulate = Color(1, 0, 0)
+		else: health_label.modulate = Color(0, 1, 0)
 
-	# --- 2. PRIVATE VISUALS (Bag & Table) ---
 	if not is_multiplayer_authority(): return
 
-	# HIDE EVERYTHING
+	# 1. HIDE ALL FIRST
 	if red_placholder: red_placholder.hide()
 	if red_placholder_2: red_placholder_2.hide()
 	if red_placholder_3: red_placholder_3.hide()
 	if red_placholder_4: red_placholder_4.hide()
+	
+	if fabric_placeholder: fabric_placeholder.hide()
+	if fabric_placeholder_2: fabric_placeholder_2.hide()
+	if fabric_placeholder_3: fabric_placeholder_3.hide()
+	if fabric_placeholder_4: fabric_placeholder_4.hide()
 	
 	if craft_scrap_1: craft_scrap_1.hide()
 	if craft_scrap_2: craft_scrap_2.hide()
 	if craft_scrap_3: craft_scrap_3.hide()
 	if craft_scrap_4: craft_scrap_4.hide()
 	
-	# SHOW BAG ITEMS
+	if craft_fabric_1: craft_fabric_1.hide()
+	if craft_fabric_2: craft_fabric_2.hide()
+	if craft_fabric_3: craft_fabric_3.hide()
+	if craft_fabric_4: craft_fabric_4.hide()
+	
+	# 2. SHOW BAG ITEMS (Scrap - 10s)
 	if scrap_amount >= 10 and red_placholder: red_placholder.show()
 	if scrap_amount >= 20 and red_placholder_2: red_placholder_2.show()
 	if scrap_amount >= 30 and red_placholder_3: red_placholder_3.show()
 	if scrap_amount >= 40 and red_placholder_4: red_placholder_4.show()
 	
-	# SHOW TABLE ITEMS
+	# 3. SHOW BAG ITEMS (Fabric - 5s)
+	if fabric_amount >= 5 and fabric_placeholder: fabric_placeholder.show()
+	if fabric_amount >= 10 and fabric_placeholder_2: fabric_placeholder_2.show()
+	if fabric_amount >= 15 and fabric_placeholder_3: fabric_placeholder_3.show()
+	if fabric_amount >= 20 and fabric_placeholder_4: fabric_placeholder_4.show()
+	
+	# 4. SHOW TABLE ITEMS (Scrap - 10s)
 	if scrap_in_crafting >= 10 and craft_scrap_1: craft_scrap_1.show()
 	if scrap_in_crafting >= 20 and craft_scrap_2: craft_scrap_2.show()
 	if scrap_in_crafting >= 30 and craft_scrap_3: craft_scrap_3.show()
 	if scrap_in_crafting >= 40 and craft_scrap_4: craft_scrap_4.show()
+	
+	# 5. SHOW TABLE ITEMS (Fabric - 5s)
+	if fabric_in_crafting >= 5 and craft_fabric_1: craft_fabric_1.show()
+	if fabric_in_crafting >= 10 and craft_fabric_2: craft_fabric_2.show()
+	if fabric_in_crafting >= 15 and craft_fabric_3: craft_fabric_3.show()
+	if fabric_in_crafting >= 20 and craft_fabric_4: craft_fabric_4.show()
 
-	# --- 3. CRAFTED ITEM ICONS ---
+	# 6. CRAFTED ITEM ICONS
 	if metal_icon:
 		var metal_count = crafted_inventory.get("metal", 0)
 		metal_icon.visible = metal_count > 0
@@ -183,6 +280,12 @@ func update_inventory_visuals():
 		bandage_icon.visible = bandage_count > 0
 		var b_lbl = bandage_icon.get_node_or_null("Label")
 		if b_lbl: b_lbl.text = str(bandage_count)
+		
+	if wall_icon:
+		var wall_count = crafted_inventory.get("wall", 0)
+		wall_icon.visible = wall_count > 0
+		var w_lbl = wall_icon.get_node_or_null("Label")
+		if w_lbl: w_lbl.text = str(wall_count)
 
 # --- BUTTONS ---
 
@@ -201,6 +304,7 @@ func _on_combine_button_mouse_entered():
 func _on_combine_button_mouse_exited():
 	if recipe_tooltip: recipe_tooltip.hide()
 
+# SCRAP BUTTONS
 func _on_scrap_button_pressed():
 	if not is_multiplayer_authority(): return
 	if scrap_amount >= 10: rpc_id(1, "request_transfer_scrap", 10) 
@@ -208,6 +312,19 @@ func _on_scrap_button_pressed():
 func _on_crafting_scrap_pressed():
 	if not is_multiplayer_authority(): return
 	if scrap_in_crafting >= 10: rpc_id(1, "request_return_scrap", 10)
+
+# FABRIC BUTTONS (NEW)
+# Connect button in Inventory -> FabricAmount -> Button
+func _on_fabric_button_pressed():
+	if not is_multiplayer_authority(): return
+	# Transfer 5 at a time
+	if fabric_amount >= 5: rpc_id(1, "request_transfer_fabric", 5)
+
+# Connect button in CraftingArea -> FabricButton (create this button)
+func _on_crafting_fabric_pressed():
+	if not is_multiplayer_authority(): return
+	# Return 5 at a time
+	if fabric_in_crafting >= 5: rpc_id(1, "request_return_fabric", 5)
 
 func _on_combine_button_pressed():
 	if not is_multiplayer_authority(): return
@@ -219,38 +336,25 @@ func _on_combine_button_pressed():
 			break
 	if found_recipe != -1: rpc_id(1, "request_craft_from_table", found_recipe)
 
-# NEW: Bandage Button Logic
-# Connect the button ON TOP of the BandageIcon to this function!
 func _on_bandage_button_pressed():
 	if not is_multiplayer_authority(): return
-	
 	if crafted_inventory.get("bandage", 0) > 0:
-		if health < max_health:
-			rpc_id(1, "request_use_item", "bandage")
-		else:
-			print("Health is already full!")
-	else:
-		print("No bandages!")
+		if health < max_health: rpc_id(1, "request_use_item", "bandage")
 
-# --- DAMAGE LOGIC ---
-# Called by Damage Zones or Enemies
-func take_damage(amount: int):
-	# Only the server should process damage to ensure fairness
-	if multiplayer.is_server():
-		health -= amount
-		if health < 0: health = 0
-		# Sync new health to everyone
-		sync_state_to_everyone()
-		print(name + " took damage. HP: " + str(health))
+func _on_wall_button_pressed():
+	if not is_multiplayer_authority(): return
+	if crafted_inventory.get("wall", 0) > 0:
+		is_placing_wall = true
+		if inventory: inventory.visible = false
+		print("Entered Wall Placement Mode")
+	else:
+		print("No walls to place!")
 
 # --- NETWORKING LOGIC ---
 
 func sync_state_to_everyone():
 	if not multiplayer.is_server(): return
-	
-	# UPDATED: Now sending 'health' as well!
 	rpc("update_resources", scrap_amount, fabric_amount, scrap_in_crafting, fabric_in_crafting, health)
-	
 	var inv_json = JSON.stringify(crafted_inventory)
 	rpc("update_crafted_inventory_safe", inv_json)
 
@@ -270,6 +374,23 @@ func request_return_scrap(amount):
 			scrap_amount += amount
 		sync_state_to_everyone()
 
+# NEW RPCs FOR FABRIC
+@rpc("any_peer", "call_local", "reliable")
+func request_transfer_fabric(amount):
+	if multiplayer.is_server():
+		if fabric_amount >= amount:
+			fabric_amount -= amount
+			fabric_in_crafting += amount
+		sync_state_to_everyone()
+
+@rpc("any_peer", "call_local", "reliable")
+func request_return_fabric(amount):
+	if multiplayer.is_server():
+		if fabric_in_crafting >= amount:
+			fabric_in_crafting -= amount
+			fabric_amount += amount
+		sync_state_to_everyone()
+
 @rpc("any_peer", "call_local", "reliable")
 func request_craft_from_table(index):
 	if multiplayer.is_server():
@@ -285,29 +406,39 @@ func request_craft_from_table(index):
 			
 			sync_state_to_everyone()
 
-# NEW: Item Usage Logic
 @rpc("any_peer", "call_local", "reliable")
 func request_use_item(item_name):
 	if multiplayer.is_server():
-		# Verify they have the item
 		if crafted_inventory.get(item_name, 0) > 0:
-			
-			# Apply Effects
 			if item_name == "bandage":
 				health += 100
 				if health > max_health: health = max_health
-				print("Player Healed! HP: ", health)
 			
-			# Consume Item
 			crafted_inventory[item_name] -= 1
 			if crafted_inventory[item_name] <= 0:
 				crafted_inventory.erase(item_name)
 			
 			sync_state_to_everyone()
 
+@rpc("any_peer", "call_local", "reliable")
+func request_place_wall_item(pos):
+	if multiplayer.is_server():
+		if crafted_inventory.get("wall", 0) > 0:
+			crafted_inventory["wall"] -= 1
+			if crafted_inventory["wall"] <= 0:
+				crafted_inventory.erase("wall")
+			
+			sync_state_to_everyone()
+			
+			if ResourceLoader.exists("res://wall.tscn"):
+				var wall_scn = load("res://wall.tscn") 
+				var wall = wall_scn.instantiate()
+				wall.global_position = pos
+				wall.name = "Wall_" + str(randi())
+				get_parent().add_child(wall, true)
+
 # --- RELIABLE UPDATE ---
 
-# UPDATED: Accepts health (hp) now
 @rpc("any_peer", "call_local", "reliable")
 func update_resources(s_amt, f_amt, s_table, f_table, hp):
 	if not multiplayer.is_server(): print("Client Update. HP: ", hp)
@@ -315,7 +446,7 @@ func update_resources(s_amt, f_amt, s_table, f_table, hp):
 	fabric_amount = f_amt
 	scrap_in_crafting = s_table
 	fabric_in_crafting = f_table
-	health = hp # Sync Health
+	health = hp 
 	update_inventory_visuals()
 
 @rpc("any_peer", "call_local", "reliable")
@@ -327,22 +458,7 @@ func update_crafted_inventory_safe(json_data):
 		crafted_inventory = {}
 	update_inventory_visuals()
 
-# --- INTERACTION & PICKUP ---
-
-@rpc("any_peer", "call_local", "reliable")
-func request_collect_resource(pile_path, type):
-	if multiplayer.is_server():
-		var pile = get_node_or_null(pile_path)
-		if pile != null:
-			if type == "fabric":
-				self.fabric_amount += 5
-			else:
-				self.scrap_amount += 10
-			sync_state_to_everyone()
-			rpc("trigger_pickup_visuals", type)
-			pile.collect()
-
-# --- STANDARD SETUP (unchanged) ---
+# --- STANDARD INTERACTION ETC ---
 
 func _send_network_updates():
 	var new_anim = "idle"
@@ -358,17 +474,9 @@ func _send_network_updates():
 	if can_send_updates:
 		rpc_id(1, "update_position_server", global_position)
 
-# CHANGED: Uses "left", "right", "up", "down" from your Input Map
 func handle_input():
 	var input_direction = Input.get_vector("left", "right", "up", "down")
 	velocity = input_direction * speed
-
-func _input(event):
-	if not is_multiplayer_authority(): return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-		if scrap_amount >= 1:
-			var mouse_pos = get_global_mouse_position()
-			rpc_id(1, "request_place_wall", mouse_pos)
 
 func _setup_interaction_components():
 	interaction_area = Area2D.new()
@@ -401,14 +509,12 @@ func _setup_interaction_components():
 	fabric_label.modulate = Color(0.8, 0.8, 1.0) 
 	add_child(fabric_label)
 	
-	# Create Health Label if not manual
 	health_label = Label.new()
 	health_label.text = "HP: 100"
 	health_label.position = Vector2(-20, -80)
 	health_label.modulate = Color(0, 1, 0)
 	add_child(health_label)
 
-# CHANGED: Uses "interact" from your Input Map
 func handle_interaction(delta):
 	if current_pile != null and Input.is_action_pressed("interact"):
 		interact_timer += delta
@@ -481,3 +587,22 @@ func update_flip(flipped: bool):
 	is_flipped = flipped
 	if has_node("AnimatedSprite2D"): get_node("AnimatedSprite2D").flip_h = flipped
 	elif has_node("Sprite2D"): get_node("Sprite2D").flip_h = flipped
+
+@rpc("any_peer", "call_local", "reliable")
+func request_collect_resource(pile_path, type):
+	if multiplayer.is_server():
+		var pile = get_node_or_null(pile_path)
+		if pile != null:
+			if type == "fabric":
+				self.fabric_amount += 5
+			else:
+				self.scrap_amount += 10
+			sync_state_to_everyone()
+			rpc("trigger_pickup_visuals", type)
+			pile.collect()
+
+func take_damage(amount: int):
+	if multiplayer.is_server():
+		health -= amount
+		if health < 0: health = 0
+		sync_state_to_everyone()

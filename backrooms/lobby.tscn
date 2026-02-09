@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://dca6m32itwmq2" path="res://recording_red.png" id="7_up7ya"]
 [ext_resource type="Texture2D" uid="uid://c5b04jyf4y7kj" path="res://bgimage2.png" id="8_7b1xw"]
 [ext_resource type="Script" uid="uid://28d2ajblj1ef" path="res://recording_red.gd" id="8_mcopp"]
+[ext_resource type="Texture2D" uid="uid://v0p1xxevrapb" path="res://bgimg3.png" id="9_wjc17"]
 [ext_resource type="Texture2D" uid="uid://c3wsgjh644wjg" path="res://statics.png" id="10_nu6hm"]
 [ext_resource type="Script" uid="uid://ccuvpedo2jhnd" path="res://statics.gd" id="11_7pn7i"]
 
@@ -70,8 +71,8 @@ position = Vector2(528, 296.00003)
 scale = Vector2(1.3144016, 1.1914895)
 texture = ExtResource("6_up7ya")
 script = ExtResource("7_7pn7i")
-images = Array[Texture2D]([ExtResource("6_up7ya"), ExtResource("8_7b1xw")])
-image_scales = Array[Vector2]([Vector2(1.3144016, 1.1914895), Vector2(0.527, 0.48)])
+images = Array[Texture2D]([ExtResource("6_up7ya"), ExtResource("8_7b1xw"), ExtResource("9_wjc17")])
+image_scales = Array[Vector2]([Vector2(1.3144016, 1.1914895), Vector2(0.527, 0.48), Vector2(0.688, 0.8)])
 black_pause = 1.5
 
 [node name="Node2D" type="Node2D" parent="CanvasLayer/LobbyUI" unique_id=526625358]
