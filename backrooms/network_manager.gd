@@ -8,6 +8,7 @@ const BROADCAST_PORT = 8911
 @export var scrap_scene: PackedScene 
 @export var wall_scene: PackedScene 
 @export var fabric_scene: PackedScene # <--- NEW EXPORT
+@export var enemy_scene: PackedScene # <--- NEW: ENEMY EXPORT
 
 # UI Nodes
 @onready var lobby_ui = $CanvasLayer/LobbyUI
@@ -57,7 +58,8 @@ func _ready():
 	if player_scene: spawner.add_spawnable_scene(player_scene.resource_path)
 	if scrap_scene: spawner.add_spawnable_scene(scrap_scene.resource_path)
 	if wall_scene: spawner.add_spawnable_scene(wall_scene.resource_path)
-	if fabric_scene: spawner.add_spawnable_scene(fabric_scene.resource_path) # <--- ADD THIS
+	if fabric_scene: spawner.add_spawnable_scene(fabric_scene.resource_path)
+	if enemy_scene: spawner.add_spawnable_scene(enemy_scene.resource_path) # <--- REGISTER ENEMY
 
 	broadcaster.set_broadcast_enabled(true)
 	broadcaster.set_dest_address("255.255.255.255", BROADCAST_PORT)
@@ -151,7 +153,7 @@ func _on_host_button_pressed():
 	
 	lobby_ui.hide()
 	spawn_player(1)
-	_spawn_level_resources() # <--- CHANGED FUNCTION NAME
+	_spawn_level_resources() 
 	
 	broadcast_timer.start()
 	
@@ -271,11 +273,18 @@ func _spawn_level_resources():
 			pile.global_position = Vector2(randf_range(100, 900), randf_range(100, 500))
 			players_container.add_child(pile, true)
 	
-	# 2. Spawn Fabric (NEW)
+	# 2. Spawn Fabric
 	if fabric_scene:
-		for i in range(5): # Spawning 5 fabric piles
+		for i in range(5): 
 			var pile = fabric_scene.instantiate()
 			pile.name = "Fabric_" + str(randi())
-			# Same random area as scrap, or adjust these numbers to spawn elsewhere
 			pile.global_position = Vector2(randf_range(100, 900), randf_range(100, 500))
 			players_container.add_child(pile, true)
+	
+	# 3. Spawn Enemies (NEW)
+	if enemy_scene:
+		for i in range(3): # Spawning 3 enemies
+			var enemy = enemy_scene.instantiate()
+			enemy.name = "Enemy_" + str(randi())
+			enemy.global_position = Vector2(randf_range(100, 900), randf_range(100, 500))
+			players_container.add_child(enemy, true)

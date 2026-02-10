@@ -169,19 +169,6 @@ radius = 88.362885
 
 [node name="Player" type="CharacterBody2D" unique_id=1593526875]
 script = ExtResource("1_onrkg")
-recipes = Array[Dictionary]([{
-"fabric_cost": 0,
-"name": "Refined Metal",
-"output_amount": 10,
-"output_name": "metal",
-"scrap_cost": 30
-}, {
-"fabric_cost": 5,
-"name": "Bandage",
-"output_amount": 1,
-"output_name": "bandage",
-"scrap_cost": 0
-}])
 
 [node name="WallGhost" type="Sprite2D" parent="." unique_id=1601402773]
 texture = ExtResource("6_2hs0m")
@@ -205,6 +192,7 @@ frame_progress = 0.8509199
 
 [node name="Col" type="CollisionShape2D" parent="." unique_id=1778995245]
 shape = SubResource("CircleShape2D_sweqy")
+disabled = true
 
 [node name="Inv" type="CanvasLayer" parent="." unique_id=2111573900]
 
@@ -238,6 +226,7 @@ offset_top = -18.198713
 offset_right = 14.519882
 offset_bottom = -10.198713
 scale = Vector2(4.75859, 4.75859)
+flat = true
 
 [node name="RedPlacholder2" type="Sprite2D" parent="Inv/InvControl/Sprite2D/ScarpAmmount" unique_id=35990449]
 texture_filter = 1
@@ -279,6 +268,7 @@ offset_left = -17.142845
 offset_top = -17.5
 offset_right = 117.14286
 offset_bottom = 20.0
+flat = true
 
 [node name="FabricPlaceholder2" type="Sprite2D" parent="Inv/InvControl/Sprite2D/FabricAmount" unique_id=39497263]
 texture_filter = 1
@@ -340,6 +330,7 @@ offset_left = 722.0
 offset_top = 130.0
 offset_right = 1002.0
 offset_bottom = 354.0
+flat = true
 
 [node name="CraftFabric1" type="Sprite2D" parent="Inv/InvControl/CraftingArea" unique_id=582644936]
 texture_filter = 1
@@ -375,6 +366,7 @@ offset_left = 722.0
 offset_top = 365.0
 offset_right = 1002.0
 offset_bottom = 512.0
+flat = true
 
 [node name="Craft" type="Button" parent="Inv/InvControl" unique_id=761354009]
 layout_mode = 0
@@ -383,6 +375,7 @@ offset_top = 520.0
 offset_right = 944.0
 offset_bottom = 624.0
 text = "Craft"
+flat = true
 
 [node name="CraftedItems" type="Control" parent="Inv/InvControl" unique_id=1203328260]
 anchors_preset = 0
@@ -413,6 +406,7 @@ offset_left = -64.0
 offset_top = -32.0
 offset_right = 34.0
 offset_bottom = 40.0
+flat = true
 
 [node name="WallIcon" type="Sprite2D" parent="Inv/InvControl/CraftedItems" unique_id=1483437223]
 position = Vector2(448, 496)
@@ -423,24 +417,34 @@ offset_right = 40.0
 offset_bottom = 23.0
 text = "x10"
 
-[node name="Button" type="Button" parent="Inv/InvControl/CraftedItems/WallIcon" unique_id=676209530]
+[node name="Wall" type="Button" parent="Inv/InvControl/CraftedItems/WallIcon" unique_id=676209530]
 offset_left = -24.0
 offset_top = -32.0
 offset_right = 34.0
 offset_bottom = 32.0
+flat = true
 
-[node name="RecipeTooltip" type="Label" parent="Inv/InvControl" unique_id=1013754358]
-layout_mode = 0
-offset_left = 944.0
-offset_top = 504.0
-offset_right = 1017.0
-offset_bottom = 527.0
-text = "XRECIPEX"
+[node name="Button" type="Button" parent="Inv/InvControl/CraftedItems/WallIcon" unique_id=1195794950]
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 34.0
+offset_bottom = 32.0
 
 [node name="Health" type="Label" parent="Inv/InvControl" unique_id=637586034]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
+
+[node name="RecipeList" type="VBoxContainer" parent="Inv/InvControl" unique_id=207959284]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 19.8
+anchor_top = 9.2
+anchor_right = 23.1
+anchor_bottom = 14.2
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
 
 [connection signal="pressed" from="Inv/InvControl/Sprite2D/ScarpAmmount/RedPlacholder/Button" to="." method="_on_scrap_button_pressed"]
 [connection signal="pressed" from="Inv/InvControl/Sprite2D/FabricAmount/FabricPlaceholder/Button" to="." method="_on_fabric_button_pressed"]
@@ -450,4 +454,4 @@ offset_bottom = 23.0
 [connection signal="mouse_exited" from="Inv/InvControl/Craft" to="." method="_on_combine_button_mouse_exited"]
 [connection signal="pressed" from="Inv/InvControl/Craft" to="." method="_on_combine_button_pressed"]
 [connection signal="pressed" from="Inv/InvControl/CraftedItems/BandageIcon/UseBandage" to="." method="_on_bandage_button_pressed"]
-[connection signal="pressed" from="Inv/InvControl/CraftedItems/WallIcon/Button" to="." method="_on_wall_button_pressed"]
+[connection signal="pressed" from="Inv/InvControl/CraftedItems/WallIcon/Wall" to="." method="_on_wall_button_pressed"]

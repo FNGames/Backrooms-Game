@@ -16,6 +16,16 @@
 [ext_resource type="Texture2D" uid="uid://v0p1xxevrapb" path="res://bgimg3.png" id="9_wjc17"]
 [ext_resource type="Texture2D" uid="uid://c3wsgjh644wjg" path="res://statics.png" id="10_nu6hm"]
 [ext_resource type="Script" uid="uid://ccuvpedo2jhnd" path="res://statics.gd" id="11_7pn7i"]
+[ext_resource type="Script" uid="uid://83sdffo0474y" path="res://ennemytest.gd" id="17_selw0"]
+[ext_resource type="Texture2D" uid="uid://7k3qllbftr6j" path="res://icon.svg" id="18_b454d"]
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_selw0"]
+vertices = PackedVector2Array(1518.2578, 88.71875, 1549.6797, 1102, -583.0078, 1102, -724.7031, -228.29688)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(-736, -240, 1528, 80, 1560, 1112, -592, 1112)])
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_selw0"]
+size = Vector2(40, 128)
 
 [node name="Main" type="Node2D" unique_id=1699848197]
 script = ExtResource("1_1gg6n")
@@ -122,6 +132,20 @@ position = Vector2(840, 952)
 
 [node name="Area2D2" parent="." unique_id=986203593 instance=ExtResource("7_8ldoj")]
 position = Vector2(808, 336)
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="." unique_id=1022837221]
+position = Vector2(176, -192)
+navigation_polygon = SubResource("NavigationPolygon_selw0")
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="NavigationRegion2D" unique_id=147264013]
+script = ExtResource("17_selw0")
+
+[node name="Sprite2D" type="Sprite2D" parent="NavigationRegion2D/CharacterBody2D" unique_id=548723732]
+scale = Vector2(0.3125, 1)
+texture = ExtResource("18_b454d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="NavigationRegion2D/CharacterBody2D" unique_id=2025089783]
+shape = SubResource("RectangleShape2D_selw0")
 
 [connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/HostButton" to="." method="_on_host_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/LobbyUI/VBoxContainer/JoinButton" to="." method="_on_join_button_pressed"]
